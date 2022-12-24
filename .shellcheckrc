@@ -1,0 +1,4 @@
+# $HOME/.shellcheckrc
+# Disable individual error codes
+disable=SC2034 # variable appears unused. Disabled for LOG_FILE.
+disable=SC1091 # not following sourced file. Disabled for common-rpl.sh which is in a subdirectory locally but same directory on server.

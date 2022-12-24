@@ -1,0 +1,14 @@
+Verbose=false
+LogFilename=$HOME/test0001.log
+SecondsToWaitForEpoch=235
+NumberOfTimesToRetryWaitingForEpoch=985
+
+RsyncLogFilename=$HOME/test0001-rsync.log
+
+UsernamePrefix=iuf
+Timezone=Europe/London
+SshPort=110
+RocketPoolInstallFile=$HOME/bin/rocketpool0001
+RocketPoolDirectory=$HOME/.rocketpool0001
+DropboxDirectory=$HOME/Dropbox0001
+InstallDropbox=false

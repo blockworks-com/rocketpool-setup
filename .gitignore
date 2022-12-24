@@ -1,0 +1,29 @@
+# Archives
+**/[Aa]rchive/
+**/[_.][Aa]rchive/
+
+# RSA Pub Files
+**/*.pub
+
+# Our install config
+Client/new-install.yml
+
+# Client Tools
+**/*.exe
+Client/
+Client/Windows
+Client/Mac
+Client/Linux
+
+# Bats Testing framework
+Tests/bats
+Tests/test_helper
+
+# Test file containing validator id
+Tests/validator-id.txt
+
+# logo for Windows Terminal
+**/smartnode-32-32.png
+
+# Ubunut Autoinstall config
+UbuntuInstall/
