@@ -6,6 +6,7 @@ if [[ -f "common-rpl-maintenance.sh" ]]; then source common-rpl-maintenance.sh; 
 #Define the string value
 prune='n'
 disk='sda3'
+PATH_CONSTRAINING_DISK_SPACE='/' # Depends on your device
 
 # handle command line options
 if [[ $1 == "-n" || $1 == "--no_wait" || 
@@ -15,7 +16,7 @@ if [[ $1 == "-n" || $1 == "--no_wait" ||
     $5 == "-n" || $5 == "--no_wait" || 
     $6 == "-n" || $6 == "--no_wait" ]]; then
     echo "Do no wait for next epoch"
-    waitForNextEpoch=false
+    _waitForNextEpoch=false
 fi
 if [[ $1 == "-f" || $1 == "--force" || 
     $2 == "-f" || $2 == "--force" || 
@@ -68,17 +69,16 @@ Initialize
 
 seconds=0
 
-echo ''
-echo "Running Monthly tasks: update OS, update RPL, prune GETH, ..."
+echo 'Running Monthly tasks: update OS, update RPL, prune GETH, ...'
 echo ''
 
-echo '*** Check disk space'
-df -h
+# use sudo command to prompt for password if necessary so we don't prompt after waiting for epoch
+sudo ls >/dev/null
 
 #ask if we should perform prune
 answer=
 echo ''
-echo 'Perform prune-eth1 to free disk space (y/n)?'
+echo 'Dive is' $(df -BG '/' | grep -Po "(\d+%)") 'full. Perform prune-eth1 to free disk space (y/n)?'
 read -r answer
 if [[ $answer == 'y' ]]; then
   prune=$answer
@@ -86,7 +86,7 @@ fi
 
 # set parameters for other scripts
 param=""
-if [[ $waitForNextEpoch == false ]]; then
+if [[ $_waitForNextEpoch == false ]]; then
   param="$param -n"
 fi
 if [[ $forceUpdate == true ]]; then
@@ -96,24 +96,29 @@ if [[ $verbose == true ]]; then
   param="$param -v"
 fi
 
-echo ''
-echo '*** Call Update OS'
+echo '**************'
+echo '* Call Update OS'
+echo '**************'
 . ./update-os.sh "$param"
 
-echo ''
-echo '*** Call Update RPL'
+echo '*****************'
+echo '* Call Update RPL'
+echo '*****************'
 . ./update-rpl.sh "$param"
 
 if [[ $prune == 'y' ]]; then
-  echo ''
-  echo '*** Call Prune Geth'
+  echo '*****************'
+  echo '* Call Prune Geth'
+  echo '*****************'
   . ./prune-geth.sh "$param"
 else
   echo 'not pruning'
 fi
 
 if [ -f /var/run/reboot-required ]; then
-  echo '*** reboot required'
+  echo '*****************'
+  echo '* reboot required'
+  echo '*****************'
   echo 'Check timing to minimize missing Attestations and run sudo reboot'
 else
   echo 'reboot NOT required'

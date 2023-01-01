@@ -24,7 +24,7 @@ if [[ $1 == "-n" || $1 == "--no_wait" ||
     $5 == "-n" || $5 == "--no_wait" || 
     $6 == "-n" || $6 == "--no_wait" ]]; then
     echo "Do no wait for next epoch"
-    waitForNextEpoch=false
+    _waitForNextEpoch=false
 fi
 if [[ $1 == "-o" || $1 == "--override" || 
     $2 == "-o" || $2 == "--override" || 
@@ -189,7 +189,7 @@ else
         fi
         sudo cp -r "$HOME/.rocketpool" "$HOME/.rocketpool.bak" 2>/dev/null
 
-        if [[ "$waitForNextEpoch" == true ]]; then
+        if [[ "$_waitForNextEpoch" == true ]]; then
           # Wait for next epoch before proceeding
           waitForNextEpoch
         fi

@@ -14,7 +14,7 @@ if [[ $1 == "-n" || $1 == "--no_wait" ||
     $2 == "-n" || $2 == "--no_wait" ||
     $3 == "-n" || $3 == "--no_wait" ]]; then
     echo "Do no wait for next epoch"
-    waitForNextEpoch=false
+    _waitForNextEpoch=false
 fi
 if [[ $1 == "-v" || $1 == "--verbose" ||
     $2 == "-v" || $2 == "--verbose" ||
@@ -47,7 +47,7 @@ if [[ $defaults == false ]]; then
     echo 'Wait for next epoch [y/n]?'
     read -r answer
     if [[ ${answer,,} == 'y' ]]; then
-        waitForNextEpoch=false
+        _waitForNextEpoch=false
     fi
 fi
 
@@ -55,7 +55,7 @@ fi
 sudo ls >/dev/null
 
 #wait for next epoch?
-if [[ $waitForNextEpoch == true ]]; then
+if [[ $_waitForNextEpoch == true ]]; then
     if [[ $verbose == true ]]; then
         echo 'Check timing to minimize missing Attestations and run sudo reboot'
     fi
@@ -68,4 +68,5 @@ if [[ $verbose == true ]]; then
 fi
 sudo reboot
 Cleanup
+echo '...sleep 90 seconds to allow for reboot'
 sleep 90 # need this to allow the reboot command to complete.

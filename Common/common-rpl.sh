@@ -27,7 +27,8 @@ fi
 if [[ -z $WAIT_EPOCH_MAX_RETRIES || $WAIT_EPOCH_MAX_RETRIES -lt 0 ]]; then 
   if [[ $verbose == true ]]; then
     echo "Set default value for WAIT_EPOCH_MAX_RETRIES";
-  fi 
+  fi
+  WAIT_EPOCH_MAX_RETRIES=15
 fi
 if [[ -z $WAIT_EPOCH_SECONDS || $WAIT_EPOCH_SECONDS -lt 0 ]]; then
   (( WAIT_EPOCH_MAX_RETRIES=(WAIT_EPOCH_MAX_RETRIES*60)/5 )) # wait a max of 15 minutes

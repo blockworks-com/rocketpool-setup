@@ -13,7 +13,7 @@ if [[ $1 == "-n" || $1 == "--no_wait" ||
     $2 == "-n" || $2 == "--no_wait" ||
     $3 == "-n" || $3 == "--no_wait" ]]; then
     echo "Do no wait for next epoch"
-    waitForNextEpoch=false
+    _waitForNextEpoch=false
 fi
 if [[ $1 == "-v" || $1 == "--verbose" ||
     $2 == "-v" || $2 == "--verbose" ||
@@ -46,7 +46,7 @@ if [[ $defaults == false ]]; then
     echo 'Wait for next epoch [y/n]?'
     read -r answer
     if [[ ${answer,,} == 'y' ]]; then
-        waitForNextEpoch=false
+        _waitForNextEpoch=false
     fi
 fi
 
@@ -86,7 +86,7 @@ if [[ ${#listOfUpdates} -gt 10 ]]; then # TODO: Why this magic value of 10??
             echo 'sudo apt dist-upgrade'
         # fi
 
-        if [[ $waitForNextEpoch == true ]]; then
+        if [[ $_waitForNextEpoch == true ]]; then
             # Wait for next epoch before proceeding
             waitForNextEpoch
         fi
@@ -107,7 +107,7 @@ if [[ ${#listOfUpdates} -gt 10 ]]; then # TODO: Why this magic value of 10??
         echo 'sudo apt upgrade'
     # fi
     #wait for next epoch?
-    if [[ $waitForNextEpoch == true ]]; then
+    if [[ $_waitForNextEpoch == true ]]; then
         # Wait for next epoch before proceeding
         waitForNextEpoch
     fi
@@ -143,7 +143,7 @@ if [ -f /var/run/reboot-required ]; then
         echo 'reboot required'
     fi
     log 'reboot required after OS updates.'
-    if [[ $waitForNextEpoch == true ]]; then
+    if [[ $_waitForNextEpoch == true ]]; then
         echo 'Check timing to minimize missing Attestations and run sudo reboot'
         # Wait for next epoch before proceeding
         waitForNextEpoch
