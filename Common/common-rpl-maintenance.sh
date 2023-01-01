@@ -5,7 +5,7 @@
 # Set global variables, if they are not already set
 if [[ $defaults != true && $defaults != false ]]; then defaults=true; fi
 if [[ $forceUpdate != true && $forceUpdate != false ]]; then forceUpdate=false; fi
-if [[ $waitForNextEpoch != true && $waitForNextEpoch != false ]]; then waitForNextEpoch=true; fi
+if [[ $_waitForNextEpoch != true && $_waitForNextEpoch != false ]]; then _waitForNextEpoch=true; fi
 if [[ $distUpgrade != true && $distUpgrade != false ]]; then distUpgrade=true; fi
 if [[ -z $LATEST_VERSION_URL ]]; then LATEST_VERSION_URL="github.com/rocket-pool/smartnode-install/releases/latest/download"; fi
 if [[ -z $DOWNLOAD_BASE_URL ]]; then DOWNLOAD_BASE_URL="https://github.com/rocket-pool/smartnode-install/releases/download/v"; fi 
