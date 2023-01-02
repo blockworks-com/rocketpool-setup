@@ -64,7 +64,7 @@ getCurrentPoint() {
     then
         currentProgress=100
     else
-        currentProgress=$(echo $currentProgress | grep 'Your consensus client' | awk -F'(' '{print $2}' | awk -F'%)' '{print $1}')
+        currentProgress=$(echo "$currentProgress" | grep 'Your consensus client' | awk -F'(' '{print $2}' | awk -F'%)' '{print $1}')
     fi
 
     currentDate=$(date)

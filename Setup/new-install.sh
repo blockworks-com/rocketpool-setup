@@ -202,9 +202,9 @@ prepare_as_root_user() {
         TMP_USER=${USER_PREFIX}${RANDOM}
         # tmpPassword=$(openssl rand -base64 25)
         echo "   Generated Password for $TMP_USER: $(openssl rand -base64 25)"
-        sudo useradd -d /home/$TMP_USER -m -s/bin/bash $TMP_USER
-        sudo passwd $TMP_USER
-        sudo adduser $TMP_USER sudo
+        sudo useradd -d "/home/$TMP_USER" -m -s/bin/bash "$TMP_USER"
+        sudo passwd "$TMP_USER"
+        sudo adduser "$TMP_USER" sudo
         # sudo useradd -m $TMP_USER -p $tmpPassword
         #try $(sudo useradd $TMP_USER -p $(openssl rand -base64 25))
         #try $(sudo useradd -d /home/$TMP_USER $TMP_USER)
@@ -638,21 +638,13 @@ install_rocketpool() {
         junk=
         log "Rebooting after Rocketpool installed and configured."
         sudo reboot
+        echo '...sleep 90 seconds to allow for reboot'
+        sleep 90
         return
     else
         echo '   You must open a new terminal to continue. Exiting script.'
         log "NO reboot after Rocketpool installed and configured."
-        return
     fi
-# TODO: ????????? do we ever run the below since we have to reboot above?
-    # if [[ $INSTALL_ROCKETPOOL_MAINNET == true ]]; then
-    #     echo '' && echo '   Finish Rocketpool Installation on MAINNET.'
-        # rocketpool service install -d
-        # log "Rocketpool install -d finished."
-    # else
-    #     echo '' && echo '   Finish Rocketpool Installation on TESTNET ('$TESTNET')'
-    #     rocketpool service install -d -n prater
-    # fi
 
     serviceVersion=$(rocketpool service version)
     if [[ $serviceVersion == *"Could not get"* ]]; then 
@@ -746,7 +738,7 @@ finish_rocketpool_installation() {
     echo '   Register Node. Press ENTER to register Rocketpool node.'
     read -r junk
     junk=
-    rocketpool node register -t $TIMEZONE
+    rocketpool node register -t "$TIMEZONE"
     log "Rocketpool node register started."
 
     nodeStatus=$(rocketpool node status)
