@@ -8,6 +8,47 @@ exportEth1='n'
 disk='sda3'
 BACKUP_DEST_DIR=$HOME/backup
 destDir="$DROPBOX_DEST_DIR" # default to Dropbox
+exportEth1=false
+defaults=true
+
+# handle command line options
+if [[ $1 == "-e" || $1 == "--export-eth1" ||
+    $2 == "-e" || $2 == "--export-eth1" || 
+    $3 == "-e" || $3 == "--export-eth1" || 
+    $4 == "-e" || $4 == "--export-eth1" ]]; then
+    echo "Export Eth1"
+    exportEth1=true
+fi
+if [[ $1 == "-p" || $1 == "--prompt" || 
+    $2 == "-p" || $2 == "--prompt" || 
+    $3 == "-p" || $3 == "--prompt" || 
+    $4 == "-p" || $4 == "--prompt" ]]; then
+    echo "Prompt for values and options"
+    defaults=false
+fi
+if [[ $1 == "-v" || $1 == "--verbose" ||
+    $2 == "-v" || $2 == "--verbose" ||
+    $3 == "-v" || $3 == "--verbose" ||
+    $4 == "-v" || $4 == "--verbose" ]]; then
+    echo "Verbose on"
+    verbose=true
+fi
+if [[ $1 == "-h" || $1 == "--help" || 
+    $2 == "-h" || $2 == "--help" || 
+    $3 == "-h" || $3 == "--help" || 
+    $4 == "-h" || $4 == "--help" ]]; then
+    cat << EOF
+Usage: backup-rpl-server [OPTIONS]...
+Copies eth1 directory, and grafana dashboard configuration to backup directory.
+
+    Option                     Meaning
+    -e|--export-eth1           Export Eth1 to local disk before backing up
+    -h|--help                  Displays this help and exit
+    -p|--prompt                Prompt for each option instead of using defaults
+    -v|--verbose               Displays verbose output
+EOF
+    return
+fi
 
 #####################################################################################################################
 # Main
@@ -20,21 +61,19 @@ echo ""
 echo "*** Check disk space"
 df -h
 
-#ask if we should perform export-eth1
-answer=
-echo ""
-echo "Perform export-eth1 (y/n)?"
-read -r answer
-if [[ $answer == 'y' ]]; then
-  exportEth1=$answer
-  #ask if we should export-eth1 to Dropbox
-  if [ ! -d "$DROPBOX_DEST_DIR" ]; then
-    echo "Using local backup since Dropbox directory does not exist."
-    destDir="$BACKUP_DEST_DIR"
-  fi
+# Use local backup directory if Dropbox not installed
+if [ ! -d "$DROPBOX_DEST_DIR" ]; then
+  # echo "Using local backup since Dropbox directory does not exist."
+  destDir="$BACKUP_DEST_DIR"
+fi
+echo "Backup directory: $destDir"
+
+if [[ "$defaults" == false ]]; then
+  #ask if we should perform export-eth1
+  exportEth1=false
   answer=
   echo ""
-  echo "Export-eth1 to $destDir (y/n)?"
+  echo "Perform export-eth1 (y/n)?"
   read -r answer
   if [[ $answer == 'y' ]]; then
     exportEth1=$answer
@@ -56,18 +95,16 @@ if [ ! -d "$destDir/grafana" ]; then
 fi
 sudo cp -r '/var/lib/docker/volumes/rocketpool_grafana-storage' "$destDir/grafana"
 
-# backup geth
+# backup eth1
 if [[ $exportEth1 == 'y' ]]; then
-  if [ ! -d "$destDir" ]; then
-    mkdir -p "$destDir";
-  fi
   # func (c *Client) RunEcMigrator(container string, volume string, targetDir string, mode string, image string) error {
 	# cmd := fmt.Sprintf("docker run --rm --name %s -v %s:/ethclient -v %s:/mnt/external -e EC_MIGRATE_MODE='%s' %s", container, volume, targetDir, mode, image)
 # docker run --rm --name $container -v $volume:/ethclient -v $targetDir:/mnt/external -e EC_MIGRATE_MODE='$mode' $image", container, volume, targetDir, "export", image
   echo "*** Performing export-eth1"
   rocketpool service export-eth1-data "$destDir"
+  echo "Done export-eth1."
 else
-  echo "not exporting eth1"
+  echo "Not exporting eth1"
 fi
 
 # rm backup.tar.gz && sudo tar -c -f backup.tar.gz $HOME/backup

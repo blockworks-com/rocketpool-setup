@@ -11,6 +11,9 @@ if [[ -f "common-rpl-maintenance.sh" ]]; then source common-rpl-maintenance.sh; 
 #Define values or override default values
 OUR_PLATFORM="rocketpool-cli-linux-amd64"
 WAIT_AFTER_START=60
+_waitForNextEpoch=true
+defaults=true
+forceUpdate=false
 overrideVersion=
 
 #https://github.com/rocket-pool/smartnode-install/releases/latest/download/rocketpool-cli-linux-amd64 # latest that needs to be resolved
@@ -81,10 +84,14 @@ if [[ $1 == "-h" || $1 == "--help" ||
     $5 == "-h" || $5 == "--help" || 
     $6 == "-h" || $6 == "--help" ]]; then
     cat << EOF
-Usage:
+Usage: upgrade-rpl [OPTIONS]...
+Apply RocketPool updates.
+
+    Option                     Meaning
     -f|--force                 Force an upgrade to latest version even if the node is down
-    -h|--help                  Displays this help
+    -h|--help                  Displays this help and exit
     -n|--no_wait               Do not wait for next Epoch before interrupting node and potentially missing attestations
+    -o|--override              Specific RocketPool version to install 
     -p|--prompt                Prompt for each option instead of using defaults
     -v|--verbose               Displays verbose output
 EOF

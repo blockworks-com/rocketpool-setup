@@ -8,27 +8,43 @@ if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; else source ../Common/co
 if [[ -f "common-rpl-maintenance.sh" ]]; then source common-rpl-maintenance.sh; else source ../Common/common-rpl-maintenance.sh; fi
 
 #Define the string value
+_waitForNextEpoch=true
+defaults=true
 
 # handle command line options
 if [[ $1 == "-n" || $1 == "--no_wait" ||
     $2 == "-n" || $2 == "--no_wait" ||
-    $3 == "-n" || $3 == "--no_wait" ]]; then
+    $3 == "-n" || $3 == "--no_wait" ||
+    $4 == "-n" || $4 == "--no_wait" ]]; then
     echo "Do no wait for next epoch"
     _waitForNextEpoch=false
 fi
+if [[ $1 == "-p" || $1 == "--prompt" || 
+    $2 == "-p" || $2 == "--prompt" || 
+    $3 == "-p" || $3 == "--prompt" || 
+    $4 == "-p" || $4 == "--prompt" ]]; then
+    echo "Prompt for values and options"
+    defaults=false
+fi
 if [[ $1 == "-v" || $1 == "--verbose" ||
     $2 == "-v" || $2 == "--verbose" ||
-    $3 == "-v" || $3 == "--verbose" ]]; then
+    $3 == "-v" || $3 == "--verbose" ||
+    $4 == "-v" || $4 == "--verbose" ]]; then
     echo "Verbose on"
     verbose=true
 fi
 if [[ $1 == "-h" || $1 == "--help" || 
     $2 == "-h" || $2 == "--help" || 
-    $3 == "-h" || $3 == "--help" ]]; then
+    $3 == "-h" || $3 == "--help" || 
+    $4 == "-h" || $4 == "--help" ]]; then
     cat << EOF
-Usage:
-    -h|--help                  Displays this help
+Usage: restart-os [OPTIONS]...
+Restart the Operating System after optionally waiting for the next Epoch to minimize missed attestations.
+
+    Option                     Meaning
+    -h|--help                  Displays this help and exit
     -n|--no_wait               Do not wait for next Epoch before interrupting node and potentially missing attestations
+    -p|--prompt                Prompt for each option instead of using defaults
     -v|--verbose               Displays verbose output
 EOF
     return

@@ -30,7 +30,7 @@ fi
 function script_usage() {
     cat << EOF
 Usage:
-    -h|--help                  Displays this help
+    -h|--help                  Displays this help and exit
     -u|--user                  User on host for connection
     -h|--host                  Host IP address for connection
 EOF

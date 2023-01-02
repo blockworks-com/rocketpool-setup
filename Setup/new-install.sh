@@ -38,7 +38,7 @@ if [[ $1 == "-h" || $1 == "--help" ||
     cat << EOF
 Usage:
     -d|--defaults              Install using defaults
-    -h|--help                  Displays this help
+    -h|--help                  Displays this help and exit
     -p|--prompt                Prompt for each option instead of using defaults
     -v|--verbose               Displays verbose output
 EOF
