@@ -11,25 +11,77 @@ if [[ -f "common-rpl-maintenance.sh" ]]; then source common-rpl-maintenance.sh; 
 # TODO: remove comma from values passed
 
 #Define the string value
+missedLogDir="./missed-epoch"
 linesPerEpoch=71
 bufferLines=500
 
 missedEpoch=
 missedSlot=
+_waitForNextEpoch=true
 
-if [[ $1 == "-h" || $1 == "--help" ]]; then
-    echo 'help info'
-    return
-elif [[ -n "$2" ]]; then 
-    if [[ $1 == "--epoch" ]]; then
-        missedEpoch=${2//[,]/}
-        # echo 'Missed Epoch: '$missedEpoch
-    elif [[ $1 == "--slot" ]]; then
-        missedSlot=${2//[,]/}
-        # echo 'Missed Slot: '$missedSlot
-    fi
+if [[ $1 == "-n" || $1 == "--no_wait" || 
+    $2 == "-n" || $2 == "--no_wait" || 
+    $3 == "-n" || $3 == "--no_wait" || 
+    $4 == "-n" || $4 == "--no_wait" || 
+    $5 == "-n" || $5 == "--no_wait" || 
+    $6 == "-n" || $6 == "--no_wait" ]]; then
+    echo "Do no wait for next epoch"
+    _waitForNextEpoch=false
 fi
+if [[ $1 == "-e" || $1 == "--epoch" ||
+    $2 == "-e" || $2 == "--epoch" || 
+    $3 == "-e" || $3 == "--epoch" || 
+    $4 == "-e" || $4 == "--epoch" ]]; then
+    if [[ $1 == "-s" || $1 == "--slot" ]]; then
+        missedEpoch=${2//[,]/}
+    elif [[ $2 == "-s" || $2 == "--slot" ]]; then
+        missedEpoch=${3//[,]/}
+    elif [[ $3 == "-s" || $2 == "--slot" ]]; then
+        missedEpoch=${4//[,]/}
+    elif [[ $4 == "-s" || $2 == "--slot" ]]; then
+        missedEpoch=${5//[,]/}
+    fi
+    echo 'Missed Epoch: '$missedEpoch
+fi
+if [[ $1 == "-s" || $1 == "--slot" ||
+    $2 == "-s" || $2 == "--slot" || 
+    $3 == "-s" || $3 == "--slot" || 
+    $4 == "-s" || $4 == "--slot" ]]; then
+    if [[ $1 == "-s" || $1 == "--slot" ]]; then
+        missedSlot=${2//[,]/}
+    elif [[ $2 == "-s" || $1 == "--slot" ]]; then
+        missedSlot=${3//[,]/}
+    elif [[ $3 == "-s" || $1 == "--slot" ]]; then
+        missedSlot=${4//[,]/}
+    elif [[ $4 == "-s" || $1 == "--slot" ]]; then
+        missedSlot=${5//[,]/}
+    fi
+    echo 'Missed Slot: '$missedSlot
+fi
+if [[ $1 == "-v" || $1 == "--verbose" || 
+    $2 == "-v" || $2 == "--verbose" || 
+    $3 == "-v" || $3 == "--verbose" || 
+    $4 == "-v" || $4 == "--verbose" ]]; then
+    echo "Verbose on"
+    verbose=true
+fi
+if [[ $1 == "-h" || $1 == "--help" || 
+    $2 == "-h" || $2 == "--help" || 
+    $3 == "-h" || $3 == "--help" || 
+    $4 == "-h" || $4 == "--help" ]]; then
+    cat << EOF
+Usage: get-missed-epoch [OPTIONS]...
+Parses the log and saves the section for the missed epoch to missed-<123>.log for further analysis.
 
+    Option                     Meaning
+    -e|--epoch                 Epoch that was missed
+    -h|--help                  Displays this help and exit
+    -n|--no_wait               Do not wait for next Epoch before interrupting node and potentially missing attestations
+    -s|--slot                  Slot that was missed
+    -v|--verbose               Displays verbose output
+EOF
+    return
+fi
 
 getEpochForSlot() {
     # $1 is missedSlot
@@ -61,6 +113,7 @@ getEpochForSlot() {
 #####################################################################################################################
 Initialize
 
+missedLogDir
 # was a missed slot passed
 if [[ $missedSlot ]]; then
     # use missed slot to find the missed epoch
@@ -104,7 +157,7 @@ if [[ ! -f "missed-$missedEpoch.log" ]]; then
     lines=$(((( currentEpoch - missedEpoch) * 71) + bufferLines ))
     #echo $lines
 
-    echo "sed '/epoch=$((missedEpoch - 1))/,/epoch=$((missedEpoch + 1))/ !d' $missedEpoch.log > missed-$missedEpoch.log" > "$TMP_SCRIPT_FILE"
+    echo "sed '/ep och=$((missedEpoch - 1))/,/epoch=$((missedEpoch + 1))/ !d' $missedEpoch.log > missed-$missedEpoch.log" > "$TMP_SCRIPT_FILE"
     echo "rm $missedEpoch.log" >> "$TMP_SCRIPT_FILE"
     echo "rm $missedEpoch.sh" >> "$TMP_SCRIPT_FILE"
 
@@ -146,19 +199,26 @@ if [[ ! -f "missed-$missedEpoch.log" ]]; then
         echo 'OS rebooted. Press return to continue to view log.'
         read -r
     fi
-
-    echo "view log in editor"
-    nano "missed-$missedEpoch.log"
-
-    # echo "WARNING: YOU MUST HIT CRTL-C TO END THE LOG TAIL COMMAND!!!! Press any key to start the log tail command and then hit Crtl-C once it's running."
-    # read
-    # rpl service logs eth2
 else
     echo "Raw log file already exists."
     echo "Use sed to filter raw log using sh."
     . "$TMP_SCRIPT_FILE"
+fi
+
+# copy to missed epoch folder
+if [[ -n $missedLogDir ]]; then
+    if [ ! -d "$missedLogDir" ]; then
+        mkdir -p "$missedLogDir";
+    fi
+
+    mv "missed-$missedEpoch.log" "$missedLogDir"
+    cd "$missedLogDir"
     echo "view log in editor"
-    nano "missed-$missedEpoch.log"
+    nano "$missedLogDir/missed-$missedEpoch.log"
+    cd ".."
+else
+    echo "view log in editor"
+    nano "./missed-$missedEpoch.log
 fi
 
 echo 'listing Jobs one more time to make sure there are none hanging out there: '

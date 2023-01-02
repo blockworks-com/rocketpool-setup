@@ -21,7 +21,7 @@ if [[ $1 == "-h" || $1 == "--help" ||
     $2 == "-h" || $2 == "--help" ]]; then
     cat << EOF
 Usage:
-    -h|--help                  Displays this help
+    -h|--help                  Displays this help and exit
     -v|--verbose               Displays verbose output
 EOF
     return

@@ -7,6 +7,9 @@ if [[ -f "common-rpl-maintenance.sh" ]]; then source common-rpl-maintenance.sh; 
 prune='n'
 disk='sda3'
 PATH_CONSTRAINING_DISK_SPACE='/' # Depends on your device
+_waitForNextEpoch=true
+forceUpdate=false
+defaults=true
 
 # handle command line options
 if [[ $1 == "-n" || $1 == "--no_wait" || 
@@ -52,9 +55,12 @@ if [[ $1 == "-h" || $1 == "--help" ||
     $5 == "-h" || $5 == "--help" || 
     $6 == "-h" || $6 == "--help" ]]; then
     cat << EOF
-Usage:
+Usage: monthly [OPTIONS]...
+Wrapper script for monthly maintenance work. Calls update-os.sh, update-rpl.sh, optionally restart-os.sh, and optionally prune-geth.sh.
+
+    Option                     Meaning
     -f|--force                 Force an upgrade to latest version even if the node is down
-    -h|--help                  Displays this help
+    -h|--help                  Displays this help and exit
     -n|--no_wait               Do not wait for next Epoch before interrupting node and potentially missing attestations
     -p|--prompt                Prompt for each option instead of using defaults
     -v|--verbose               Displays verbose output
@@ -86,11 +92,14 @@ fi
 
 # set parameters for other scripts
 param=""
+if [[ $forceUpdate == true ]]; then
+  param="$param -f"
+fi
 if [[ $_waitForNextEpoch == false ]]; then
   param="$param -n"
 fi
-if [[ $forceUpdate == true ]]; then
-  param="$param -f"
+if [[ $defaults == false ]]; then
+  param="$param -p"
 fi
 if [[ $verbose == true ]]; then
   param="$param -v"
@@ -119,7 +128,7 @@ if [ -f /var/run/reboot-required ]; then
   echo '*****************'
   echo '* reboot required'
   echo '*****************'
-  echo 'Check timing to minimize missing Attestations and run sudo reboot'
+  . ./restart-os.sh "$param"
 else
   echo 'reboot NOT required'
 fi

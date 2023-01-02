@@ -12,6 +12,25 @@ GETH_VERSION=$( docker exec -i rocketpool_eth1 geth version | grep -Po "(?<=^Ver
 ETH1_DATA_VOLUME="rocketpool_eth1clientdata" # See docker volumes ls
 ETH1_MOUNT_POINT="/ethclient"
 
+# handle command line options
+if [[ $1 == "-v" || $1 == "--verbose" ||
+    $2 == "-v" || $2 == "--verbose" ]]; then
+    echo "Verbose on"
+    verbose=true
+fi
+if [[ $1 == "-h" || $1 == "--help" || 
+    $2 == "-h" || $2 == "--help" ]]; then
+    cat << EOF
+Usage: prune-geth [OPTIONS]...
+Check diskspace and then prune geth.
+
+    Option                     Meaning
+    -h|--help                  Displays this help and exit
+    -v|--verbose               Displays verbose output
+EOF
+    return
+fi
+
 #####################################################################################################################
 # Main
 #####################################################################################################################
