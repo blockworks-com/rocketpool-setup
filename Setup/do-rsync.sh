@@ -96,7 +96,7 @@ echo "latest in ancient: $(sudo ls "$HOME"/backup/geth/geth/chaindata/ancient -A
 echo "latest in ancient: $(sudo ls "$HOME"/backup/geth/geth/chaindata/ancient -Art | tail -n 1)" >> "$RSYNC_LOG_FILE"
 
 # capture list of filenames to be used by rsync-progress.sh script
-sudo find "$HOME/backup" -printf "%f\n" > "$RSYNC_WIP_FILE"
+sudo find "$HOME/backup" -printf "%f\n" | tee "$RSYNC_WIP_FILE" > /dev/null
 
 echo "" && echo "Destination IP: $host; username: $username. Press ENTER to continue or Ctrl-C to cancel."
 read -r junk
