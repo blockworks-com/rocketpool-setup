@@ -9,33 +9,60 @@ RSYNC_WIP_FILE=$HOME/rp-install-rsync-wip.log
 host=
 username=
 
-if [[ $1 == "-h" || $1 == "--help" ]]; then
-    echo 'help info'
-    return
-    elif [[ -n "$2" ]]; then
-    if [[ $1 == "--user" ]]; then
-        username=$2
-        elif [[ $1 == "--host" ]]; then
-        host=$2
+# handle command line options
+if [[ $1 == "-u" || $1 == "--user" || 
+    $2 == "-u" || $2 == "--user" || 
+    $3 == "-u" || $3 == "--user" || 
+    $4 == "-u" || $4 == "--user" ]]; then
+    if [[ $1 == "-u" || $1 == "--user" ]]; then
+        username="$2"
+    elif [[ $2 == "-u" || $2 == "--user" ]]; then
+        username="$3"
+    elif [[ $3 == "-u" || $3 == "--user" ]]; then
+        username="$4"
+    elif [[ $4 == "-u" || $4 == "--user" ]]; then
+        username="$5"
     fi
-    if [[ -n "$4" ]]; then
-        if [[ $3 == "--user" ]]; then
-            username=$4
-            elif [[ $3 == "--host" ]]; then
-            host=$4
-        fi
-    fi
+    echo "Username set to: $username"
 fi
-
-function script_usage() {
+if [[ $1 == "-s" || $1 == "--server" || 
+    $2 == "-s" || $2 == "--server" || 
+    $3 == "-s" || $3 == "--server" || 
+    $4 == "-s" || $4 == "--server" ]]; then
+    if [[ $1 == "-s" || $1 == "--server" ]]; then
+        host="$2"
+    elif [[ $2 == "-s" || $2 == "--server" ]]; then
+        host="$3"
+    elif [[ $3 == "-s" || $3 == "--server" ]]; then
+        host="$4"
+    elif [[ $4 == "-s" || $4 == "--server" ]]; then
+        host="$5"
+    fi
+    echo "Server name of host set to: $host"
+fi
+if [[ $1 == "-v" || $1 == "--verbose" ||
+    $2 == "-v" || $2 == "--verbose" || 
+    $3 == "-v" || $3 == "--verbose" || 
+    $4 == "-v" || $4 == "--verbose" ]]; then
+    echo "verbose on"
+    verbose=true
+fi
+if [[ $1 == "-h" || $1 == "--help" || 
+    $2 == "-h" || $2 == "--help" || 
+    $3 == "-h" || $3 == "--help" || 
+    $4 == "-h" || $4 == "--help" ]]; then
     cat << EOF
-Usage:
-    -h|--help                  Displays this help and exit
-    -u|--user                  User on host for connection
-    -h|--host                  Host IP address for connection
-EOF
-}
+Usage: do-rsync [OPTIONS]...
+Call rsync to sync Execution Client date to host server.
 
+    Option                     Meaning
+    -h|--help                  Displays this help and exit
+    -u|--user                  Username on host for connection
+    -s|--server                Server name of host
+    -v|--verbose               Displays verbose output
+EOF
+    return
+fi
 
 #####################################################################################################################
 # Main
