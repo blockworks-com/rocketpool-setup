@@ -3,8 +3,9 @@
 if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; else source ../Common/common-rpl.sh; fi
 
 #Define the string value
-# verbose=true
 # DEBUG=true
+defaults=true
+prompt=true
 
 # handle command line options
 if [[ $1 == "-d" || $1 == "--defaults" ||
@@ -36,7 +37,10 @@ if [[ $1 == "-h" || $1 == "--help" ||
     $3 == "-h" || $3 == "--help" || 
     $4 == "-h" || $4 == "--help" ]]; then
     cat << EOF
-Usage:
+Usage: new-install [OPTIONS]...
+Configures a new Ubuntu server and installs RocketPool. This script picks up where it left off, including during reboots.
+
+    Option                     Meaning
     -d|--defaults              Install using defaults
     -h|--help                  Displays this help and exit
     -p|--prompt                Prompt for each option instead of using defaults

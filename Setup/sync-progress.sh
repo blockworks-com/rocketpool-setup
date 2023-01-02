@@ -9,7 +9,6 @@ WAIT_MAX_RETRIES=6
 WAIT_SECONDS=600
 
 # init variables
-verbose=false
 
 # handle command line options
 if [[ $1 == "-v" || $1 == "--verbose" ||
@@ -20,7 +19,10 @@ fi
 if [[ $1 == "-h" || $1 == "--help" || 
     $2 == "-h" || $2 == "--help" ]]; then
     cat << EOF
-Usage:
+Usage: sync-progress [OPTIONS]...
+Show the sync progress.
+
+    Option                     Meaning
     -h|--help                  Displays this help and exit
     -v|--verbose               Displays verbose output
 EOF

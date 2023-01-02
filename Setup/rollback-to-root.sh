@@ -4,6 +4,25 @@ if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; else source ../Common/co
 
 #Define the string value
 
+# handle command line options
+if [[ $1 == "-v" || $1 == "--verbose" ||
+    $2 == "-v" || $2 == "--verbose" ]]; then
+    echo "verbose on"
+    verbose=true
+fi
+if [[ $1 == "-h" || $1 == "--help" || 
+    $2 == "-h" || $2 == "--help" ]]; then
+    cat << EOF
+Usage: rollback-to-root [OPTIONS]...
+Used to uninstall RocketPool and remove RocketPool user.
+
+    Option                     Meaning
+    -h|--help                  Displays this help and exit
+    -v|--verbose               Displays verbose output
+EOF
+    return
+fi
+
 #####################################################################################################################
 # Main
 #####################################################################################################################

@@ -4,6 +4,25 @@ if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; else source ../Common/co
 
 #Define the string value
 
+# handle command line options
+if [[ $1 == "-v" || $1 == "--verbose" ||
+    $2 == "-v" || $2 == "--verbose" ]]; then
+    echo "verbose on"
+    verbose=true
+fi
+if [[ $1 == "-h" || $1 == "--help" || 
+    $2 == "-h" || $2 == "--help" ]]; then
+    cat << EOF
+Usage: pause-2fa [OPTIONS]...
+Pause Two Factor Authentication. This is typically used when calling rsync.
+
+    Option                     Meaning
+    -h|--help                  Displays this help and exit
+    -v|--verbose               Displays verbose output
+EOF
+    return
+fi
+
 #####################################################################################################################
 # Main
 #####################################################################################################################
