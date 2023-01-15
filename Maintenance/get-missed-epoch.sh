@@ -5,8 +5,8 @@
 #        'sudo cat /var/log/auth.log' shows who logged on and what commands they ran
 #        sed '/Accepted google_authenticator for rpuser1234/,/session closed for user rpuser1234/ !d' <<< $(sed '/May  8 /,/May  9/ !d' <<< $(sudo cat /var/log/auth.log)) will show activity for date and user
 
-if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; else source ../Common/common-rpl.sh; fi
-if [[ -f "common-rpl-maintenance.sh" ]]; then source common-rpl-maintenance.sh; else source ../Common/common-rpl-maintenance.sh; fi
+if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; elif [[ -f "../Common/common-rpl.sh" ]]; then source ../Common/common-rpl.sh; elif [[ -f "../common-rpl.sh" ]]; then source ../common-rpl.sh; else echo "Failed to load common-rpl.sh"; return 0; fi
+if [[ -f "common-rpl-maintenance.sh" ]]; then source common-rpl-maintenance.sh; elif [[ -f "../Common/common-rpl-maintenance.sh" ]]; then source ../Common/common-rpl-maintenance.sh; elif [[ -f "../common-rpl-maintenance.sh" ]]; then source ../common-rpl-maintenance.sh; else echo "Failed to load common-rpl-maintenance.sh"; return 0; fi
 
 # TODO: remove comma from values passed
 
@@ -113,7 +113,6 @@ getEpochForSlot() {
 #####################################################################################################################
 Initialize
 
-missedLogDir
 # was a missed slot passed
 if [[ $missedSlot ]]; then
     # use missed slot to find the missed epoch
