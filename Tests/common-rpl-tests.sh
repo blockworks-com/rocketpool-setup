@@ -2,7 +2,7 @@
 
 # Regression test for common-rpl
 
-if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; else source ../Common/common-rpl.sh; fi
+if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; elif [[ -f "../Common/common-rpl.sh" ]]; then source ../Common/common-rpl.sh; elif [[ -f "../common-rpl.sh" ]]; then source ../common-rpl.sh; else echo "Failed to load common-rpl.sh"; return 0; fi
 
 #Define values or override default values
 if [[ -f "validator-id.txt" ]]; then
@@ -72,8 +72,8 @@ if [[ $(getLastEpoch) -gt 0 ]]; then echo "PASSED: getLastEpoch()"; else echo "E
 # waitForNextEpoch
 nextEpoch=$(( $(getLastEpoch) + 1 ))
 echo -ne "waitForNextEpoch will take up to several minutes..."\\r
-#waitForNextEpoch -s
-if [[ nextEpoch == $(getLastEpoch) ]]; then echo "PASSED: waitForNextEpoch()"; else echo "ERROR: waitForNextEpoch() returned unexpected result: $(getLastEpoch)"; fi
+waitForNextEpoch #-s
+if [[ nextEpoch -eq $(getLastEpoch) ]]; then echo "PASSED: waitForNextEpoch()"; else echo "ERROR: waitForNextEpoch() returned unexpected result: $(getLastEpoch)"; fi
 
 
 
