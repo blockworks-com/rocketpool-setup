@@ -77,6 +77,12 @@ if [[ $defaults == false ]]; then
     fi
 fi
 
+# check if rpl is installed since this script is frequently run before RPL install
+if [[ ! -d $RP_DIR ]]; then
+    echo 'Rocket Pool is not installed so do not wait for next Epoch'
+    _waitForNextEpoch=false
+fi
+
 # use sudo command to prompt for password if necessary so we don't prompt after waiting for epoch
 sudo ls >/dev/null
 

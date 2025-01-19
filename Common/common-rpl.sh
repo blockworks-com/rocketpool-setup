@@ -42,16 +42,26 @@ if [[ $ENABLE_FIREWALL != true && $ENABLE_FIREWALL != false ]]; then ENABLE_FIRE
 if [[ $ENABLE_FALLBACK != true && $ENABLE_FALLBACK != false ]]; then ENABLE_FALLBACK=false; fi
 if [[ $PREVENT_DOSATTACK != true && $PREVENT_DOSATTACK != false ]]; then PREVENT_DOSATTACK=true; fi
 if [[ $MODIFY_AUTOUPGRADE != true && $MODIFY_AUTOUPGRADE != false ]]; then MODIFY_AUTOUPGRADE=true; fi
+if [[ $CREATE_SWAPFILE != true && $CREATE_SWAPFILE != false ]]; then CREATE_SWAPFILE=true; fi
 
 if [[ $RESTORE_ETH1_BACKUP != true && $RESTORE_ETH1_BACKUP != false ]]; then RESTORE_ETH1_BACKUP=true; fi
 if [[ $ENABLE_AUTHENTICATION != true && $ENABLE_AUTHENTICATION != false ]]; then ENABLE_AUTHENTICATION=true; fi
 if [[ $ADD_ALIASES != true && $ADD_ALIASES != false ]]; then ADD_ALIASES=true; fi
 if [[ $INSTALL_ROCKETPOOL != true && $INSTALL_ROCKETPOOL != false ]]; then INSTALL_ROCKETPOOL=true; fi
 if [[ $INSTALL_JQ != true && $INSTALL_JQ != false ]]; then INSTALL_JQ=true; fi
-if [[ $INSTALL_DROPBOX != true && $INSTALL_DROPBOX != false ]]; then INSTALL_DROPBOX=true; fi
+if [[ $INSTALL_DROPBOX != true && $INSTALL_DROPBOX != false ]]; then INSTALL_DROPBOX=false; fi
 
 if [[ $REBOOT_DURING_RPL_INSTALL != true && $REBOOT_DURING_RPL_INSTALL != false ]]; then REBOOT_DURING_RPL_INSTALL=true; fi
 if [[ $INSTALL_GRAFANA != true && $INSTALL_GRAFANA != false ]]; then INSTALL_GRAFANA=true; fi
+if [[ $INSTALL_TAILSCALE != true && $INSTALL_TAILSCALE != false ]]; then INSTALL_TAILSCALE=true; fi
+
+if [[ -z $EXECUTION_CLIENT_PORT ]]; then EXECUTION_CLIENT_PORT=30303; fi
+if [[ -z $CONSENSUS_CLIENT_PORT ]]; then CONSENSUS_CLIENT_PORT=9001; fi
+if [[ -z $ETH_API_PORT ]]; then ETH_API_PORT=5052; fi
+if [[ -z $PRYSM_ETH_API_PORT ]]; then PRYSM_ETH_API_PORT=5053; fi
+if [[ -z $PROMETHEUS_IP_ADDRESS ]]; then PROMETHEUS_IP_ADDRESS=172.23.0.0; fi
+if [[ -z $GRAFANA_PORT ]]; then GRAFANA_PORT=3100; fi
+if [[ -z $FALLBACK_ETH_API_PORT ]]; then FALLBACK_ETH_API_PORT=8545; fi
 
 if [[ $DEBUG != true && $DEBUG != false ]]; then DEBUG=false; fi
 if [[ $prompt != true && $prompt != false ]]; then prompt=false; fi
@@ -151,7 +161,7 @@ getNetwork() {
 
   # Note: Your Smartnode is currently using the Ethereum Mainnet.
   # Note: Your Smartnode is currently using the Prater Test Network.
-  prefix='Your Smartnode is currently using the'
+  prefix='Your Smart Node is currently using the'
 
   tmpMessage=$(rocketpool service version | grep "$prefix")
 #  echo $tmpMessage
@@ -495,6 +505,13 @@ setVariablesFromConfigFile() {
   if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
   if [[ -n $tmpValue ]]; then MODIFY_AUTOUPGRADE="$tmpValue"; fi
 
+  # CreateSwapfile
+  tmpKey=CreateSwapfile
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then CREATE_SWAPFILE="$tmpValue"; fi
+
   # RestoreEth1FromBackup
   tmpKey=RestoreEth1FromBackup
   if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
@@ -544,9 +561,106 @@ setVariablesFromConfigFile() {
   if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
   if [[ -n $tmpValue ]]; then INSTALL_GRAFANA="$tmpValue"; fi
 
+  # InstallTailscale
+  tmpKey=InstallTailscale
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then INSTALL_TAILSCALE="$tmpValue"; fi
+
+  # Execution Client Port
+  tmpKey=ExecutionClientPort
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then EXECUTION_CLIENT_PORT="$tmpValue"; fi
+
+  # Consensus Client Port
+  tmpKey=ConsensusClientPort
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then CONSENSUS_CLIENT_PORT="$tmpValue"; fi
+
+  # Ethereum API Port
+  tmpKey=EthApiPort
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then ETH_API_PORT="$tmpValue"; fi
+
+  # Prysm Ethereum API Port
+  tmpKey=PrysmEthApiPort
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then PRYSM_ETH_API_PORT="$tmpValue"; fi
+
+  # Prometheus IP
+  tmpKey=PrometheusIp
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then PROMETHEUS_IP_ADDRESS="$tmpValue"; fi
+
+  # Grafana Port
+  tmpKey=GrafanaPort
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then GRAFANA_PORT="$tmpValue"; fi
+
+  # Fallback Ethereum API Port
+  tmpKey=FallbackEthApiPort
+  if [[ $verbose == true ]]; then echo "Looking for $tmpKey in config file"; fi 
+  tmpValue=$(getVariableFromConfigFile "$tmpKey" "$__configFilename")
+  if [[ $verbose == true ]]; then echo "$tmpKey = $tmpValue"; fi 
+  if [[ -n $tmpValue ]]; then FALLBACK_ETH_API_PORT="$tmpValue"; fi
+
+
   debug_leave_function
   # Update the global variable after calling debug_leave_function to avoid unexpected messages
   if [[ -n $__verbose ]]; then verbose="$__verbose"; fi
+}
+
+echoVariables() {
+  debug_enter_function
+
+  echo "verbose: $verbose"
+  echo "WAIT_EPOCH_SECONDS: $WAIT_EPOCH_SECONDS"
+  echo "WAIT_EPOCH_MAX_RETRIES: $WAIT_EPOCH_MAX_RETRIES"
+  echo "USER_PREFIX: $USER_PREFIX"
+  echo "TIMEZONE: $TIMEZONE"
+  echo "SSH_PORT: $SSH_PORT"
+  echo "INSTALL_DROPBOX: $INSTALL_DROPBOX"
+  echo "LOG_FILE: $LOG_FILE"
+  echo "RSYNC_LOG_FILE: $RSYNC_LOG_FILE"
+  echo "RP_INSTALL_FILE: $RP_INSTALL_FILE"
+  echo "RP_DIR: $RP_DIR"
+  echo "DROPBOX_DEST_DIR: $DROPBOX_DEST_DIR"
+  echo "CHANGE_ROOTPASSWORD: $CHANGE_ROOTPASSWORD"
+  echo "CREATE_NONROOTUSER: $CREATE_NONROOTUSER"
+  echo "ENABLE_FIREWALL: $ENABLE_FIREWALL"
+  echo "ENABLE_FALLBACK: $ENABLE_FALLBACK"
+  echo "PREVENT_DOSATTACK: $PREVENT_DOSATTACK"
+  echo "MODIFY_AUTOUPGRADE: $MODIFY_AUTOUPGRADE"
+  echo "CREATE_SWAPFILE: $CREATE_SWAPFILE"
+  echo "RESTORE_ETH1_BACKUP: $RESTORE_ETH1_BACKUP"
+  echo "ENABLE_AUTHENTICATION: $ENABLE_AUTHENTICATION"
+  echo "ADD_ALIASES: $ADD_ALIASES"
+  echo "INSTALL_ROCKETPOOL: $INSTALL_ROCKETPOOL"
+  echo "INSTALL_JQ: $INSTALL_JQ"
+  echo "REBOOT_DURING_RPL_INSTALL: $REBOOT_DURING_RPL_INSTALL"
+  echo "INSTALL_GRAFANA: $INSTALL_GRAFANA"
+  echo "EXECUTION_CLIENT_PORT: $EXECUTION_CLIENT_PORT"
+  echo "CONSENSUS_CLIENT_PORT: $CONSENSUS_CLIENT_PORT"
+  echo "ETH_API_PORT: $ETH_API_PORT"
+  echo "PRYSM_ETH_API_PORT: $PRYSM_ETH_API_PORT"
+  echo "PROMETHEUS_IP_ADDRESS: $PROMETHEUS_IP_ADDRESS"
+  echo "GRAFANA_PORT: $GRAFANA_PORT"
+  echo "FALLBACK_ETH_API_PORT: $FALLBACK_ETH_API_PORT"
+
+  debug_leave_function
 }
 
 # template() {

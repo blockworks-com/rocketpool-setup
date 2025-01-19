@@ -34,6 +34,15 @@ clearValues() {
     unset -v INSTALL_GRAFANA
     unset -v DROPBOX_DEST_DIR
     unset -v INSTALL_DROPBOX
+    unset -v INSTALL_TAILSCALE
+
+    unset -v EXECUTION_CLIENT_PORT
+    unset -v CONSENSUS_CLIENT_PORT
+    unset -v ETH_API_PORT
+    unset -v PRYSM_ETH_API_PORT
+    unset -v PROMETHEUS_IP_ADDRESS
+    unset -v GRAFANA_PORT
+    unset -v FALLBACK_ETH_API_PORT
 }
 
 test0001() {
@@ -71,6 +80,14 @@ test0001() {
     if [[ ! $REBOOT_DURING_RPL_INSTALL == false ]]; then (( errors++ )); echo "Error: REBOOT_DURING_RPL_INSTALL was not loaded from the config file with the correct value."; else (( success++ )); fi
     if [[ ! $INSTALL_GRAFANA == false ]]; then (( errors++ )); echo "Error: INSTALL_GRAFANA was not loaded from the config file with the correct value."; else (( success++ )); fi
     if [[ ! $INSTALL_DROPBOX == false ]]; then (( errors++ )); echo "Error: INSTALL_DROPBOX was not loaded from the config file with the correct value."; else (( success++ )); fi
+
+    if [[ ! $EXECUTION_CLIENT_PORT == 39999 ]]; then (( errors++ )); echo "Error: EXECUTION_CLIENT_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $CONSENSUS_CLIENT_PORT == 9991 ]]; then (( errors++ )); echo "Error: CONSENSUS_CLIENT_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $ETH_API_PORT == 9992 ]]; then (( errors++ )); echo "Error: ETH_API_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $PRYSM_ETH_API_PORT == 9993 ]]; then (( errors++ )); echo "Error: PRYSM_ETH_API_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $PROMETHEUS_IP_ADDRESS == 172.99.99.99 ]]; then (( errors++ )); echo "Error: PROMETHEUS_IP_ADDRESS was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $GRAFANA_PORT == 3997 ]]; then (( errors++ )); echo "Error: GRAFANA_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $FALLBACK_ETH_API_PORT == 9995 ]]; then (( errors++ )); echo "Error: FALLBACK_ETH_API_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
 }
 
 test0002() {
@@ -117,13 +134,21 @@ test0003() {
     if [[ ! $INSTALL_DROPBOX == false ]]; then (( errors++ )); echo "Error: INSTALL_DROPBOX was not loaded from the config file with the correct value."; else (( success++ )); fi
 }
 
-# Do not load from config file to use hardcoded defaults
 test0004() {
+    clearValues
+    setVariablesFromConfigFile "test0004.yml"
+    echo "Test Suite 0004"
+
+    if [[ ! $INSTALL_TAILSCALE == false ]]; then (( errors++ )); echo "Error: INSTALL_TAILSCALE was not loaded from the config file with the correct value."; else (( success++ )); fi
+}
+
+# Do not load from config file to use hardcoded defaults
+test1000() {
     clearValues
     echo "Test Suite 0004"
 
     # reload common-rpl since it sets the hardcoded defaults
-    source ../common-rpl.sh
+    if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; elif [[ -f "../Common/common-rpl.sh" ]]; then source ../Common/common-rpl.sh; elif [[ -f "../common-rpl.sh" ]]; then source ../common-rpl.sh; else echo "Failed to load common-rpl.sh"; return 0; fi
 
     if [[ ! $verbose == false ]]; then (( errors++ )); echo "Error: verbose was not set with the correct hardcoded default value."; else (( success++ )); fi
 
@@ -155,6 +180,61 @@ test0004() {
     if [[ ! $REBOOT_DURING_RPL_INSTALL == true ]]; then (( errors++ )); echo "Error: REBOOT_DURING_RPL_INSTALL was not set with the correct hardcoded default value."; else (( success++ )); fi
     if [[ ! $INSTALL_GRAFANA == true ]]; then (( errors++ )); echo "Error: INSTALL_GRAFANA was not set with the correct hardcoded default value."; else (( success++ )); fi
     if [[ ! $INSTALL_DROPBOX == true ]]; then (( errors++ )); echo "Error: INSTALL_DROPBOX was not set with the correct hardcoded default value."; else (( success++ )); fi
+
+    if [[ ! $EXECUTION_CLIENT_PORT == 30303 ]]; then (( errors++ )); echo "Error: EXECUTION_CLIENT_PORT was not set with the correct hardcoded default value."; else (( success++ )); fi
+    if [[ ! $CONSENSUS_CLIENT_PORT == 9001 ]]; then (( errors++ )); echo "Error: CONSENSUS_CLIENT_PORT was not set with the correct hardcoded default value."; else (( success++ )); fi
+    if [[ ! $ETH_API_PORT == 5052 ]]; then (( errors++ )); echo "Error: ETH_API_PORT was not set with the correct hardcoded default value."; else (( success++ )); fi
+    if [[ ! $PRYSM_ETH_API_PORT == 5053 ]]; then (( errors++ )); echo "Error: PRYSM_ETH_API_PORT was not set with the correct hardcoded default value."; else (( success++ )); fi
+    if [[ ! $PROMETHEUS_IP_ADDRESS == 172.23.0.0 ]]; then (( errors++ )); echo "Error: PROMETHEUS_IP_ADDRESS was not set with the correct hardcoded default value."; else (( success++ )); fi
+    if [[ ! $GRAFANA_PORT == 3100 ]]; then (( errors++ )); echo "Error: GRAFANA_PORT was not set with the correct hardcoded default value."; else (( success++ )); fi
+    if [[ ! $FALLBACK_ETH_API_PORT == 8545 ]]; then (( errors++ )); echo "Error: FALLBACK_ETH_API_PORT was not set with the correct hardcoded default value."; else (( success++ )); fi
+}
+
+testStandardNewInstallConfig() {
+    clearValues
+    if [[ ! -f "../new-install.yml" ]]; then (( errors++ )); echo "Error: ../new-install.yml not found and cannot run test suite."; fi
+
+    setVariablesFromConfigFile "../new-install.yml"
+    echo "Test Suite Standard New Install Config"
+
+    local __verbose=$verbose
+    if [[ ! $verbose == false ]]; then (( errors++ )); echo "Error: verbose was not loaded from the config file with the correct value."; else (( success++ )); fi
+    verbose=$__verbose
+
+    if [[ ! $LOG_FILE == "$HOME/rp-install.log" ]]; then (( errors++ )); echo "Error: LOG_FILE was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $WAIT_EPOCH_SECONDS == 5 ]]; then (( errors++ )); echo "Error: WAIT_EPOCH_SECONDS was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $WAIT_EPOCH_MAX_RETRIES == 15 ]]; then (( errors++ )); echo "Error: WAIT_EPOCH_MAX_RETRIES was not loaded from the config file with the correct value."; else (( success++ )); fi
+
+    if [[ ! $RSYNC_LOG_FILE == "$HOME/rp-install-rsync.log" ]]; then (( errors++ )); echo "Error: RSYNC_LOG_FILE was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $USER_PREFIX == "rpuser" ]]; then (( errors++ )); echo "Error: USER_PREFIX was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $TIMEZONE == "Europe/London" ]]; then (( errors++ )); echo "Error: TIMEZONE was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $SSH_PORT == 70701 ]]; then (( errors++ )); echo "Error: SSH_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $RP_INSTALL_FILE == "$HOME/bin/rocketpool" ]]; then (( errors++ )); echo "Error: RP_INSTALL_FILE was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $RP_DIR == "$HOME/.rocketpool" ]]; then (( errors++ )); echo "Error: RP_DIR was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $DROPBOX_DEST_DIR == "$HOME/Dropbox" ]]; then (( errors++ )); echo "Error: DROPBOX_DEST_DIR was not loaded from the config file with the correct value."; else (( success++ )); fi
+
+    if [[ ! $CHANGE_ROOTPASSWORD == true ]]; then (( errors++ )); echo "Error: CHANGE_ROOTPASSWORD was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $CREATE_NONROOTUSER == true ]]; then (( errors++ )); echo "Error: CREATE_NONROOTUSER was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $ENABLE_FIREWALL == true ]]; then (( errors++ )); echo "Error: ENABLE_FIREWALL was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $ENABLE_FALLBACK == false ]]; then (( errors++ )); echo "Error: ENABLE_FALLBACK was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $PREVENT_DOSATTACK == true ]]; then (( errors++ )); echo "Error: PREVENT_DOSATTACK was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $MODIFY_AUTOUPGRADE == true ]]; then (( errors++ )); echo "Error: MODIFY_AUTOUPGRADE was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $RESTORE_ETH1_BACKUP == true ]]; then (( errors++ )); echo "Error: RESTORE_ETH1_BACKUP was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $ENABLE_AUTHENTICATION == true ]]; then (( errors++ )); echo "Error: ENABLE_AUTHENTICATION was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $ADD_ALIASES == true ]]; then (( errors++ )); echo "Error: ADD_ALIASES was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $INSTALL_ROCKETPOOL == true ]]; then (( errors++ )); echo "Error: INSTALL_ROCKETPOOL was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $INSTALL_JQ == true ]]; then (( errors++ )); echo "Error: INSTALL_JQ was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $REBOOT_DURING_RPL_INSTALL == true ]]; then (( errors++ )); echo "Error: REBOOT_DURING_RPL_INSTALL was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $INSTALL_GRAFANA == true ]]; then (( errors++ )); echo "Error: INSTALL_GRAFANA was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $INSTALL_DROPBOX == false ]]; then (( errors++ )); echo "Error: INSTALL_DROPBOX was not loaded from the config file with the correct value."; else (( success++ )); fi
+
+    if [[ ! $EXECUTION_CLIENT_PORT == 70711 ]]; then (( errors++ )); echo "Error: EXECUTION_CLIENT_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $CONSENSUS_CLIENT_PORT == 70722 ]]; then (( errors++ )); echo "Error: CONSENSUS_CLIENT_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $ETH_API_PORT == 70733 ]]; then (( errors++ )); echo "Error: ETH_API_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $PRYSM_ETH_API_PORT == 70744 ]]; then (( errors++ )); echo "Error: PRYSM_ETH_API_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $PROMETHEUS_IP_ADDRESS == 172.23.0.0 ]]; then (( errors++ )); echo "Error: PROMETHEUS_IP_ADDRESS was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $GRAFANA_PORT == 70755 ]]; then (( errors++ )); echo "Error: GRAFANA_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
+    if [[ ! $FALLBACK_ETH_API_PORT == 70766 ]]; then (( errors++ )); echo "Error: FALLBACK_ETH_API_PORT was not loaded from the config file with the correct value."; else (( success++ )); fi
 }
 
 __verbose=$verbose
@@ -165,6 +245,9 @@ test0002
 test0002a
 test0003
 test0004
+test1000
+
+testStandardNewInstallConfig
 echo "successful: $success; errors: $errors"
 
 # Cleanup

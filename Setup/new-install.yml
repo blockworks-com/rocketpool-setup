@@ -4,19 +4,19 @@ SecondsToWaitForEpoch=5
 NumberOfTimesToRetryWaitingForEpoch=15
 
 RsyncLogFilename=$HOME/rp-install-rsync.log
-
+UsernamePrefix=rpuser
 Timezone=Europe/London
-SshPort=22
 RocketPoolInstallFile=$HOME/bin/rocketpool
 RocketPoolDirectory=$HOME/.rocketpool
 DropboxDirectory=$HOME/Dropbox
-InstallDropbox=true
+InstallDropbox=false
 
 ChangeRootPassword=true
 CreateNonRootUser=true
 EnableFirewall=true
 EnableFallback=false
 PreventDOSAttack=true
+CreateSwapfile=true
 EnableAutoOSUpgrade=true
 RestoreEth1FromBackup=true
 Enable2FactorAuthentication=true
@@ -25,3 +25,13 @@ InstallRocketPool=true
 InstallJQ=true
 RebootDuringRocketPoolInstallation=true
 InstallGrafana=true
+InstallTailscale=true
+
+SshPort=22
+ExecutionClientPort=911
+ConsensusClientPort=922
+EthApiPort=933
+PrysmEthApiPort=944
+PrometheusIp=172.23.0.0
+GrafanaPort=955
+FallbackEthApiPort=966

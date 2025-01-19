@@ -1,6 +1,12 @@
 #!/bin/bash
 
+# https://docs.rocketpool.net/guides/node/securing-your-node
+# https://docs.rocketpool.net/guides/node/securing-your-node#creating-an-ssh-key-pair
+# https://docs.rocketpool.net/guides/node/installing/overview
+
 if [[ -f "common-rpl.sh" ]]; then source common-rpl.sh; elif [[ -f "../Common/common-rpl.sh" ]]; then source ../Common/common-rpl.sh; elif [[ -f "../common-rpl.sh" ]]; then source ../common-rpl.sh; else echo "Failed to load common-rpl.sh"; return 0; fi
+
+# curl https://ipinfo.io/ip
 
 #Define the string value
 # DEBUG=true
@@ -8,6 +14,14 @@ defaults=true
 prompt=true
 
 # handle command line options
+# check for verbose first so it is used with the other parameters
+if [[ $1 == "-v" || $1 == "--verbose" ||
+    $2 == "-v" || $2 == "--verbose" ||
+    $3 == "-v" || $3 == "--verbose" ||
+    $4 == "-v" || $4 == "--verbose" ]]; then
+    echo "verbose on"
+    verbose=true
+fi
 if [[ $1 == "-d" || $1 == "--defaults" ||
     $2 == "-d" || $2 == "--defaults" ||
     $3 == "-d" || $3 == "--defaults" ||
@@ -16,7 +30,9 @@ if [[ $1 == "-d" || $1 == "--defaults" ||
     prompt=false
 else
     # Set variables from config file if defaults override was not passed
+    echo "reading config file"
     setVariablesFromConfigFile "new-install.yml"
+    prompt=false
 fi
 if [[ $1 == "-p" || $1 == "--prompt" ||
     $2 == "-p" || $2 == "--prompt" ||
@@ -24,13 +40,6 @@ if [[ $1 == "-p" || $1 == "--prompt" ||
     $4 == "-p" || $4 == "--prompt" ]]; then
     # echo "prompt"
     prompt=true
-fi
-if [[ $1 == "-v" || $1 == "--verbose" ||
-    $2 == "-v" || $2 == "--verbose" ||
-    $3 == "-v" || $3 == "--verbose" ||
-    $4 == "-v" || $4 == "--verbose" ]]; then
-    echo "verbose on"
-    verbose=true
 fi
 if [[ $1 == "-h" || $1 == "--help" || 
     $2 == "-h" || $2 == "--help" || 
@@ -48,11 +57,19 @@ Configures a new Ubuntu server and installs RocketPool. This script picks up whe
 EOF
     return
 fi
+if [[ $1 == "-t" || $1 == "--test" ||
+    $2 == "-t" || $2 == "--test" ||
+    $3 == "-t" || $3 == "--test" ||
+    $4 == "-t" || $4 == "--test" ]]; then
+    echoVariables
+    return
+fi
 
 # 10. Prepare Ubuntu as root user
 # 20. Finish preparting Ubuntu and download Rocketpool as non-root user
 # 30. Install and config Rocketpool as non-root user
 # 35. Start Rocketpool after first installation
+# 37. Install and config Hyperdrive
 # 40. Wait for eth1 to sync
 # 44. Create Rocketpool Wallet
 # 46. Wait for eth2 to sync
@@ -83,39 +100,45 @@ determine_step() {
                 if [[ $serviceVersion == *"Could not get"* ]]; then 
                     step=35
                 else
-                    syncStatus=$(rocketpool node sync)
-                    if [[ ! $syncStatus == *"primary execution client is fully synced"* ]]; then 
-                        step=40
-                        log 'Primary execution client is fully synced.'
-                        # 40. Wait for eth1 to sync
+                    hyperdriveVersion=$(hyperdrive -v)
+                    if [[ $hyperdriveVersion == *"command not found"* ]]; then 
+                        step=37
+                        log 'Hyperdrive not installed.'
                     else
-                        walletStatus=$(rocketpool wallet status)
-                        if [[ ! $walletStatus == *"node wallet is initialized"* ]]; then
-                            step=44
-                            # 44. Create Rocketpool Wallet
+                        syncStatus=$(rocketpool node sync)
+                        if [[ ! $syncStatus == *"primary execution client is fully synced"* ]]; then 
+                            step=40
+                            log 'Primary execution client is fully synced.'
+                            # 40. Wait for eth1 to sync
                         else
-                            #syncStatus=$(rocketpool node sync) # already run above
-                            if [[ ! $syncStatus == *"consensus client is fully synced"* ]]; then
-                                step=46
-                                log 'Primary consensus client is fully synced.'
-                                # 46. Wait for eth2 to sync
+                            walletStatus=$(rocketpool wallet status)
+                            if [[ ! $walletStatus == *"node wallet is initialized"* ]]; then
+                                step=44
+                                # 44. Create Rocketpool Wallet
                             else
-                                nodeStatus=$(rocketpool node status)
-                                if [[ $nodeStatus == *"The node is not registered with Rocket Pool"* ]]; then
-                                    step=50
-                                    # echo '  50. Finish Rocketpool installation as non-root user'
-                                elif [[ $nodeStatus == *"The node has a total of "*" active minipool(s)"* ]]; then
-                                    step=100
-                                    # 100. Node is active
+                                #syncStatus=$(rocketpool node sync) # already run above
+                                if [[ ! $syncStatus == *"consensus client is fully synced"* ]]; then
+                                    step=46
+                                    log 'Primary consensus client is fully synced.'
+                                    # 46. Wait for eth2 to sync
                                 else
-                                    step=0
-                                    # minipoolStatus=$(rocketpool minipool status)
-                                    # if [[ $minipoolStatus == *"! finalized minipool(s)"* ]]; then
-                                    #     step=60
-                                    #     # echo '  60. Optional - Recover Rocketpool as non-root user'
-                                    # else
-                                    #     step=UNKNOWN
-                                    # fi
+                                    nodeStatus=$(rocketpool node status)
+                                    if [[ $nodeStatus == *"The node is not registered with Rocket Pool"* ]]; then
+                                        step=50
+                                        # echo '  50. Finish Rocketpool installation as non-root user'
+                                    elif [[ $nodeStatus == *"The node has a total of "*" active minipool(s)"* ]]; then
+                                        step=100
+                                        # 100. Node is active
+                                    else
+                                        step=0
+                                        # minipoolStatus=$(rocketpool minipool status)
+                                        # if [[ $minipoolStatus == *"! finalized minipool(s)"* ]]; then
+                                        #     step=60
+                                        #     # echo '  60. Optional - Recover Rocketpool as non-root user'
+                                        # else
+                                        #     step=UNKNOWN
+                                        # fi
+                                    fi
                                 fi
                             fi
                         fi
@@ -136,9 +159,16 @@ prepare_as_root_user() {
     echo 'Root user - change password and create non-root user'
     echo '******************'
 
-    # use sudo command to prompt for password if necessary so we don't prompt after staring the Rocketpool installation.
+    # use sudo command to prompt for password if necessary so we don't prompt after starting the Rocketpool installation.
     echo 'Prompt for sudo since it will be used in this script.'
     sudo ls >/dev/null
+
+    answer=
+    echo "Enter new hostname (leave blank to skip)"
+    read -r answer
+    if [[ ! -z $answer ]]; then
+        sudo hostnamectl set-hostname $answer
+    fi
 
     if [[ $prompt == true ]]; then
         CHANGE_ROOTPASSWORD=false
@@ -188,6 +218,22 @@ prepare_as_root_user() {
         if [[ $answer == 'y' ]]; then
             MODIFY_AUTOUPGRADE=true
         fi
+
+        CREATE_SWAPFILE=false
+        answer=
+        echo 'Create Swap File  (y/n)?'
+        read -r answer
+        if [[ $answer == 'y' ]]; then
+            CREATE_SWAPFILE=true
+        fi
+
+        INSTALL_TAILSCALE=false
+        answer=
+        echo 'Install Tailscale (y/n)?'
+        read -r answer
+        if [[ $answer == 'y' ]]; then
+            INSTALL_TAILSCALE=true
+        fi
     fi
 
     if [[ $CHANGE_ROOTPASSWORD == true ]]; then
@@ -219,52 +265,39 @@ prepare_as_root_user() {
         log "non-root user created."
     fi
 
+    if [[ $INSTALL_TAILSCALE == true ]]; then
+        echo '   Install Tailscale'
+        curl -fsSL https://tailscale.com/install.sh | sh
+        sudo tailscale up --ssh
+        echo '   '
+        echo '' && echo '   Press ENTER you have registered the server and disable key expiry.'
+        read -r junk
+        log "Tailscale installed"
+    fi
+
     # FIREWALL and DOS must be done as root
     if [[ $ENABLE_FIREWALL == true ]]; then
         # sudo ufw verbose
         echo '   Enable Firewall'
         # Disallow by default
         sudo ufw default deny incoming comment 'deny all incoming traffic'
-        # Allow specific things
-        sudo ufw allow "$SSH_PORT/tcp" comment 'Allow ssh on custom port'
+
         # Allow Rocketpool ports
-        # Go Ethereum: https://geth.ethereum.org/docs/interface/private-network#setting-up-networking
-        sudo ufw allow 30303/tcp comment 'Execution client port, standardized by Rocket Pool'
-        sudo ufw allow 30303/udp comment 'Execution client port, standardized by Rocket Pool'
-        # sudo ufw allow 30303:30305/tcp comment 'Go Ethereum'
-        # sudo ufw allow 30303:30305/udp comment 'Go Ethereum'
+        # configure_firewall
 
-        # Rocketpool standerdizes the incoming ETH2 port to 9001
-        sudo ufw allow 9001/tcp comment 'Consensus client port, standardized by Rocket Pool'
-        sudo ufw allow 9001/udp comment 'Consensus client port, standardized by Rocket Pool'
-        # sudo ufw allow 9001/tcp comment 'Rocketpool default port'
-        # sudo ufw allow 9001/udp comment 'Rocketpool default port'
+        # if [[ $ENABLE_FALLBACK == true ]]; then
+        #     configure_firewall_for_fallback
+        # fi
 
-
-        # Updated for 1.5 and The Merge
-        # sudo ufw allow 8545/tcp comment 'Ethereum API port'
-        # sudo ufw allow 8546/tcp comment 'Ethereum Websocket API port'
-        # sudo ufw allow 8551/tcp comment 'Ethereum Engine API port used by Consensus client'
-        sudo ufw allow 5052/tcp comment 'Ethereum API port'
-        sudo ufw allow 5053/tcp comment 'Ethereum API port used by Prysm'
-        # sudo ufw allow 5053/udp comment 'Ethereum API port used by Prysm'
-
-#       sudo ufw allow 3500/tcp comment 'Prysm checkpoint sync'
-#       sudo ufw allow from 1.1.1.1 to any port 3500 comment 'Prysm fallback for testnet'
-
-        if [[ $ENABLE_FALLBACK == true ]]; then
-            echo '   Open ports used by Fallback client'
-
-            # Allow incoming traffic to the API ports (8545, 8546, and 5052)
-            sudo ufw allow 8545:8546/tcp comment 'Ethereum API port'
-            sudo ufw allow 8545:8546/udp comment 'Ethereum API port'
-            sudo ufw allow 5052/tcp comment 'Ethereum API port'
-            sudo ufw allow 5052/udp comment 'Ethereum API port'
-            sudo ufw allow 5053/tcp comment 'Ethereum API port used by Prysm'
-            sudo ufw allow 5053/udp comment 'Ethereum API port used by Prysm'
+        if [[ $INSTALL_TAILSCALE == true ]]; then
+            sudo ufw allow in on tailscale0
+        else
+            # If not using Tailscale then allow ssh traffic
+            sudo ufw allow "$SSH_PORT/tcp" comment 'Allow ssh on custom port'
         fi
 
         sudo ufw --force enable
+        sudo ufw status verbose
         log "Firewall rules enabled"
     fi
 
@@ -291,6 +324,17 @@ prepare_as_root_user() {
         log "Prevent DOS Attack added"
     fi
 
+    if [[ $SSH_PORT -ne 22 && $INSTALL_TAILSCALE != true ]]; then
+        # update SSH_PORT
+        sudo sed -i "/Port/s/22/$SSH_PORT/g" /etc/ssh/sshd_config
+        sudo sed -i '/Port/s/^#//g' /etc/ssh/sshd_config
+        echo "SSH Port updated to $SSH_PORT"
+
+        echo "restarting ssh"
+        sudo systemctl restart ssh
+        log "ssh restarted."
+    fi
+
     if [[ $MODIFY_AUTOUPGRADE == true ]]; then
         echo '   Enable Auto Update'
         sudo apt update && sudo apt install -y unattended-upgrades update-notifier-common
@@ -311,13 +355,50 @@ prepare_as_root_user() {
         log "Auto Upgrade enabled"
     fi
 
+    if [[ $CREATE_SWAPFILE == true ]]; then
+        # Create swapfile if it does not already exist
+        if [ ! -f "/swapfile" ]; then
+            echo '   Create Swap File'
+            sudo dd if=/dev/zero of=/swapfile bs=1G count=16 status=progress
+            sudo chmod 600 /swapfile
+            sudo mkswap /swapfile
+            sudo swapon /swapfile
+            # Append line if it is not there
+            if ! grep -q "swapfile" /etc/fstab; then 
+                sudo sed -i -e '$a/swapfile                            none            swap    sw              0       0' /etc/fstab
+            fi
+            if ! grep -q "swapfile" /etc/fstab; then echo 'ERROR: Failed to append /swapfile to /etc/fstab'; fi
+
+            # sudo apt install htop
+            # htop
+
+            sudo sysctl vm.swappiness=6
+            sudo sysctl vm.vfs_cache_pressure=10
+            # Append line if it is not there
+            if ! grep -q "vm.swappiness" /etc/sysctl.conf; then 
+                sudo sed -i -e '$avm.swappiness=6' /etc/sysctl.conf
+            fi
+            if ! grep -q "vm.swappiness" /etc/sysctl.conf; then 'echo ERROR: Failed to append vm.swappiness to /etc/sysctl.conf'; fi
+            # Append line if it is not there
+            if ! grep -q "vm.vfs_cache_pressure" /etc/sysctl.conf; then 
+                sudo sed -i -e '$avm.vfs_cache_pressure=10' /etc/sysctl.conf
+            fi
+            if ! grep -q "vm.vfs_cache_pressure" /etc/sysctl.conf; then 'ERROR: Failed to append vm.vfs_cache_pressure to /etc/sysctl.conf'; fi
+
+            # Load the new settings
+            log "Swap File created"
+        fi
+    fi
+
     # copy log file from root if it doesn't exist so we have a complete log with timestamps
-    if [ ! -f "${LOG_FILE//$USER/$TMP_USER}" ]; then
+    TMP_USER_HOME=$(getent passwd "$TMP_USER" | cut -d: -f6)
+    TMP_USER_LOG="$TMP_USER_HOME/$(basename $LOG_FILE)"
+    if sudo [ ! -f "$TMP_USER_LOG" ]; then
         log "Copying log file to non-root user."
-        sudo cp "$LOG_FILE" "${LOG_FILE//$USER/$TMP_USER}"
-        sudo chown "$TMP_USER" "${LOG_FILE//$USER/$TMP_USER}"
+        sudo cp "$LOG_FILE" "$TMP_USER_HOME"
+        sudo chown "$TMP_USER" "$TMP_USER_LOG"
         log "Log file copied from $USER."
-        if [ ! -f "${LOG_FILE//$USER/$TMP_USER}" ]; then
+        if sudo [ ! -f "$TMP_USER_LOG" ]; then
             echo "WARNING: Copy log failed."
         fi
     fi
@@ -334,11 +415,29 @@ prepare_as_non-root_user() {
     echo 'Non-root user'
     echo '******************'
 
+    curl https://ipinfo.io/ip
+
     # use sudo command to prompt for password if necessary so we don't prompt after staring the Rocketpool installation.
     echo 'Prompt for sudo since it will be used in this script.'
     sudo ls >/dev/null
 
     if [[ $prompt == true ]]; then
+        CONFIG_FIREWALL=false
+        answer=
+        echo 'Configure firewall for Rocketpool (y/n)?'
+        read -r answer
+        if [[ $answer == 'y' ]]; then
+            CONFIG_FIREWALL=true
+        fi
+
+        ENABLE_FALLBACK=false
+        answer=
+        echo 'Is this a Fallback client and needs ports open (y/n)?'
+        read -r answer
+        if [[ $answer == 'y' ]]; then
+            ENABLE_FALLBACK=true
+        fi
+
         ENABLE_AUTHENTICATION=false
         answer=
         echo 'Enable Two Factor Authentication (y/n)?'
@@ -393,6 +492,22 @@ prepare_as_non-root_user() {
     #     get_eth1_backup_from_other_server
     # fi
 
+    if [[ $CONFIG_FIREWALL == true ]]; then
+        # sudo ufw verbose
+        echo '   Config Firewall'
+
+        # Allow Rocketpool ports
+        configure_firewall
+
+        if [[ $ENABLE_FALLBACK == true ]]; then
+            configure_firewall_for_fallback
+        fi
+
+        sudo ufw --force enable
+        sudo ufw status verbose
+        log "Firewall rules configured"
+    fi
+
     if [[ $INSTALL_DROPBOX == true ]]; then
         install_dropbox
         if [[ $RESTORE_ETH1_BACKUP == true ]]; then
@@ -442,6 +557,31 @@ prepare_as_non-root_user() {
     fi
 
     debug_leave_function
+}
+
+configure_firewall() {
+    # Allow specific ports for Rocketpool client
+    # Go Ethereum: https://geth.ethereum.org/docs/interface/private-network#setting-up-networking
+    echo 'Allowing specific ports for Rocketpool and Ethereum...'
+    
+    sudo ufw allow "$EXECUTION_CLIENT_PORT/tcp" comment 'Execution client port, standardized by Rocket Pool'
+    sudo ufw allow "$EXECUTION_CLIENT_PORT/udp" comment 'Execution client port, standardized by Rocket Pool'
+    sudo ufw allow "$CONSENSUS_CLIENT_PORT/tcp" comment 'Consensus client port, standardized by Rocket Pool'
+    sudo ufw allow "$CONSENSUS_CLIENT_PORT/udp" comment 'Consensus client port, standardized by Rocket Pool'
+    sudo ufw allow "$ETH_API_PORT/tcp" comment 'Ethereum API port'
+    sudo ufw allow "$PRYSM_ETH_API_PORT/tcp" comment 'Ethereum API port used by Prysm'
+}
+
+configure_firewall_for_fallback() {
+    # Allow specific ports for Rocketpool fallback client
+    echo 'Allowing specific ports for Rocketpool and Ethereum...'
+
+    sudo ufw allow "$EXECUTION_CLIENT_PORT/tcp" comment 'Execution client port, standardized by Rocket Pool'
+    sudo ufw allow "$EXECUTION_CLIENT_PORT/udp" comment 'Execution client port, standardized by Rocket Pool'
+    sudo ufw allow "$CONSENSUS_CLIENT_PORT/tcp" comment 'Consensus client port, standardized by Rocket Pool'
+    sudo ufw allow "$CONSENSUS_CLIENT_PORT/udp" comment 'Consensus client port, standardized by Rocket Pool'
+    sudo ufw allow "$ETH_API_PORT/tcp" comment 'Ethereum API port'
+    sudo ufw allow "$PRYSM_ETH_API_PORT/tcp" comment 'Ethereum API port used by Prysm'
 }
 
 enable_authentication() {
@@ -628,6 +768,12 @@ install_rocketpool() {
     read -r junk
     junk=
 
+    echo ''
+    echo '   Note: If you are using non-standard ports, make sure they are correct in Rocketpool config. Press ENTER to continue.'
+    echo '   CheckPoint Sync Urls: MAINNET: https://beaconstate.info'
+    echo '   CheckPoint Sync Urls: HOLESKY: https://holesky.beaconstate.info'
+    echo ''
+    
     echo '' && echo '  Configure Rocketpool. YOU MUST CLICK SAVE even if the config file was copied.' && echo ''
     rocketpool service config
     log "Rocketpool configured."
@@ -1026,6 +1172,7 @@ get_eth1_backup_from_other_server() {
 # ssh-keygen -f "$HOME/.ssh/known_hosts" -R "1.1.1.1"
 # 1. from other server: cat $HOME/.ssh/id_rsa.pub and copy the string
 # 1a. this server: nano $HOME/.ssh/authorized_keys and append string
+# Note: sudo grep sshd.\*Failed /var/log/auth.log | less to see failed ssh attempts
 # date && sudo rsync -av $HOME/backup rpuser1234@1.1.1.1:$HOME/ && date
 # echo -e $(date) 'Start rsync to '$ipAddr'.'>>rp-install-rsync.log && sudo rsync --progress -av $HOME/backup rpuser1234@1.1.1.1:$HOME/ && echo -e $(date) 'rsync to '$ipAddr' finished.'>>rp-install-rsync.log && scp rp-install-rsync.log $USER@ipAddr:$HOME/ && echo 'FINISHED.'
 
@@ -1170,21 +1317,86 @@ install_grafana() {
         echo '   Installing Grafana Dashboard.'
         # rocketpool service config
         # docker inspect rocketpool_monitor-net | grep -Po "(?<=\"Subnet\": \")[0-9./]+"
-        sudo ufw allow from 172.23.0.0/16 to any port 9103 comment "Allow prometheus access to node-exporter"
+        sudo ufw allow from $PROMETHEUS_IP_ADDRESS/16 to any port 9103 comment "Allow prometheus access to node-exporter"
         # Allow any IP to connect to Grafana
-        sudo ufw allow 3100/tcp comment 'Allow grafana from anywhere'
+        sudo ufw allow $GRAFANA_PORT/tcp comment 'Allow grafana from anywhere'
         rocketpool service stop -y
         rocketpool service start
         rocketpool service install-update-tracker -y
         docker restart rocketpool_exporter
 
         ipAddr=$(hostname -I | awk '{print $1;}')
-        echo "Go to to the grafana dashboard: $ipAddr:3100. Click Import under Dashboard menu. Import url: https://grafana.com/grafana/dashboards/14885"
+        echo "Go to to the grafana dashboard: $ipAddr:$GRAFANA_PORT. Click Import under Dashboard menu. Import url: https://grafana.com/grafana/dashboards/14885"
         echo "Press ENTER when ready to continue."
         read -r
         log "Finished installing Grafana"
     fi
 
+    debug_leave_function
+}
+
+install_nodeset() {
+    debug_enter_function
+    echo '   Start NodeSet Installation'
+
+    # if [[ $prompt == true ]]; then
+        INSTALL_NODESET=false
+        answer=
+        echo 'Install NodeSet (y/n)?'
+        read -r answer
+        if [[ $answer == 'y' ]]; then
+            INSTALL_NODESET=true
+        fi
+    # fi
+
+    if [[ $INSTALL_NODESET == true ]]; then
+        install_hyperdrive
+    fi
+
+    echo '   Finished installing NodeSet'
+    debug_leave_function
+}
+
+install_hyperdrive() {
+    debug_enter_function
+    echo '   Start the Hyperdrive Installation'
+
+    # Update the system packages and install some prerequisites
+    sudo apt update
+    sudo apt install curl gnupg apt-transport-https ca-certificates
+
+    # Save the Hyperdrive repository signing key
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://packagecloud.io/nodeset/hyperdrive/gpgkey -o /etc/apt/keyrings/hyperdrive.asc
+
+    # Add the Hyperdrive repository to your apt list
+    sudo tee -a /etc/apt/sources.list.d/hyperdrive.list << EOF
+deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/hyperdrive.asc] https://packagecloud.io/nodeset/hyperdrive/any/ any main
+deb-src [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/hyperdrive.asc] https://packagecloud.io/nodeset/hyperdrive/any/ any main
+EOF
+
+    # Install Hyperdrive via apt
+    sudo apt update
+    sudo apt install hyperdrive
+
+    echo -e "
+    # Hyperdrive aliases
+    alias hd='hyperdrive'
+    " >> "$HOME/.bashrc"
+
+    echo '' && echo '  Configure Hyperdrive.' && echo ''
+    echo '* Go to the HD and TX fees section'
+    echo '* In Additional Docker Networks; put rocketpool_net in there so it can bridge into the smartnode network'
+    echo '* Go to the EC settings and enter http://rocketpool_eth1:8545'
+    echo '* Go to the BN settings and enter http://rocketpool_eth2:5052'
+    echo '* Save, exit, and let it restart'
+    echo '   '
+    echo '' && echo '   Press ENTER to configure Hyperdrive.'
+    read -r junk
+    hyperdrive service config
+    log "Hyperdrive configured."
+
+    echo '   Finished installing Hyperdrive'
     debug_leave_function
 }
 
@@ -1226,6 +1438,10 @@ case $STEP in
     35)
         # 35. Start Rocketpool after first installation
         start_rocketpool
+        ;;
+    37)
+        # 37. Install and config Hyperdrive
+        install_hyperdrive
         ;;
     40)
         # 40. Wait for eth1 to sync
@@ -1307,6 +1523,7 @@ case $STEP in
         ;;
     100)
         # 100. Node is active
+        install_nodeset
         active_node
         ;;
     *)

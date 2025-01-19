@@ -47,7 +47,7 @@ if [[ $answer   == 'y' ]]; then
                 log "Rolling back by removing $TMP_USER"
                 passwd --lock "$TMP_USER"
                 sudo killall -9 -u "$TMP_USER"
-                sudo deluser --remove-home -r "$TMP_USER"
+                sudo deluser --remove-home --remove-all-files "$TMP_USER"
                 log "Rollback complete"
             fi
         fi

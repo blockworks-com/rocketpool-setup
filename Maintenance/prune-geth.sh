@@ -37,58 +37,69 @@ fi
 Initialize
 
 ###################
-# Hardware constraints
+# First check if pruning is already in progress
 ###################
-minimumDiskSpaceinGB=50
-freeDiskSpaceInGB=$( df -BG $PATH_CONSTRAINING_DISK_SPACE | grep -Po "(\d+)(?=G \ *\s+\d+%)" )
-
-###################
-# Sanity checks
-###################
-echo "Path constraining disk space: $PATH_CONSTRAINING_DISK_SPACE"
-echo "Is this correct? [y/n]"
-read -r DISKPATHCORRECT
-
-# Check if disk constraint is correct
-if [ "$DISKPATHCORRECT" = "n" ]; then
-    echo "You may change the disk path at the top of this script by editing PATH_CONSTRAINING_DISK_SPACE"
-    log "Disk path is not correct so exit."
-    return 0
+if [[ ! $(rocketpool node sync) == *"primary execution client is fully synced"* ]]; then
+    echo 'Node has not synced which means it is probably still pruning.';
+    log 'Node still pruning so view log progress.';
+    # proceed to viewing log progress
 else
-    echo "✅ Disk location confirmed"
+    # Node is ready so check if it should be pruned.
+
+    ###################
+    # Hardware constraints
+    ###################
+    minimumDiskSpaceinGB=50
+    freeDiskSpaceInGB=$( df -BG $PATH_CONSTRAINING_DISK_SPACE | grep -Po "(\d+)(?=G \ *\s+\d+%)" )
+
+    ###################
+    # Sanity checks
+    ###################
+    echo "Path constraining disk space: $PATH_CONSTRAINING_DISK_SPACE"
+    echo "Is this correct? [y/n]"
+    read -r DISKPATHCORRECT
+
+    # Check if disk constraint is correct
+    if [ "$DISKPATHCORRECT" = "n" ]; then
+        echo "You may change the disk path at the top of this script by editing PATH_CONSTRAINING_DISK_SPACE"
+        log "Disk path is not correct so exit."
+        return 0
+    else
+        echo "✅ Disk location confirmed"
+    fi
+
+    # Check if volume exists
+    if docker volume ls | grep -q "$ETH1_DATA_VOLUME"; then
+        echo "✅ Volume $ETH1_DATA_VOLUME exists"
+    else
+        echo "🛑 Volume $ETH1_DATA_VOLUME does not exist"
+        log "Volume $ETH1_DATA_VOLUME does not exist."
+        return 1
+    fi
+
+    # Check for free disk space
+    if [ "$freeDiskSpaceInGB" -lt $minimumDiskSpaceinGB ]; then
+        echo "🛑 Free disk space is $freeDiskSpaceInGB, which is under the minimum $minimumDiskSpaceinGB GB"
+        log "Free disk space is $freeDiskSpaceInGB, which is under the minimum $minimumDiskSpaceinGB GB."
+        return 1
+    else
+        echo "✅ Free disk space is $freeDiskSpaceInGB GB"
+        log "Free disk space is $freeDiskSpaceInGB GB"
+    fi
+
+    #####################
+    # Pruning actions
+    #####################
+
+    echo ''
+    preDiskspace=$( df -BG $PATH_CONSTRAINING_DISK_SPACE | grep -Po "(\d+)(?=G \ *\s+\d+%)" )
+    echo "diskspace before prune: $preDiskspace"
+    log "Diskspace before prune: $preDiskspace"
+
+    echo "Start rocketpool Geth pruning"
+    log "Start RocketPool Geth pruning."
+    rocketpool service prune-eth1
 fi
-
-# Check if volume exists
-if docker volume ls | grep -q "$ETH1_DATA_VOLUME"; then
-    echo "✅ Volume $ETH1_DATA_VOLUME exists"
-else
-    echo "🛑 Volume $ETH1_DATA_VOLUME does not exist"
-    log "Volume $ETH1_DATA_VOLUME does not exist."
-    return 1
-fi
-
-# Check for free disk space
-if [ "$freeDiskSpaceInGB" -lt $minimumDiskSpaceinGB ]; then
-    echo "🛑 Free disk space is $freeDiskSpaceInGB, which is under the minimum $minimumDiskSpaceinGB GB"
-    log "Free disk space is $freeDiskSpaceInGB, which is under the minimum $minimumDiskSpaceinGB GB."
-    return 1
-else
-    echo "✅ Free disk space is $freeDiskSpaceInGB GB"
-    log "Free disk space is $freeDiskSpaceInGB GB"
-fi
-
-#####################
-# Pruning actions
-#####################
-
-echo ''
-preDiskspace=$( df -BG $PATH_CONSTRAINING_DISK_SPACE | grep -Po "(\d+)(?=G \ *\s+\d+%)" )
-echo "diskspace before prune: $preDiskspace"
-log "Diskspace before prune: $preDiskspace"
-
-echo "Start rocketpool Geth pruning"
-log "Start RocketPool Geth pruning."
-rocketpool service prune-eth1
 
 echo "Viewing log. When 'State pruning successful', hit Ctrl-Z to exit viewing the log or Ctrl-C to quit script."
 echo "Prune stages: Iterating state snapshot, Pruning state data, and Compacting database"

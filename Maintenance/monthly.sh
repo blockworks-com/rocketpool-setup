@@ -106,18 +106,18 @@ if [[ $verbose == true ]]; then
 fi
 
 echo '**************'
-echo '* Call Update OS'
+echo "* Call Update OS $param"
 echo '**************'
 . ./update-os.sh "$param"
 
 echo '*****************'
-echo '* Call Update RPL'
+echo "* Call Update RPL $param"
 echo '*****************'
 . ./update-rpl.sh "$param"
 
 if [[ $prune == 'y' ]]; then
   echo '*****************'
-  echo '* Call Prune Geth'
+  echo "* Call Prune Geth $param"
   echo '*****************'
   . ./prune-geth.sh "$param"
 else
@@ -126,7 +126,7 @@ fi
 
 if [ -f /var/run/reboot-required ]; then
   echo '*****************'
-  echo '* reboot required'
+  echo "* reboot required $param"
   echo '*****************'
   . ./restart-os.sh "$param"
 else
