@@ -195,14 +195,6 @@ prepare_as_root_user() {
             ENABLE_FIREWALL=true
         fi
 
-        ENABLE_FALLBACK=false
-        answer=
-        echo 'Is this a Fallback client and needs ports open (y/n)?'
-        read -r answer
-        if [[ $answer == 'y' ]]; then
-            ENABLE_FALLBACK=true
-        fi
-
         PREVENT_DOSATTACK=false
         answer=
         echo 'Prevent DOS  (y/n)?'
@@ -281,13 +273,6 @@ prepare_as_root_user() {
         echo '   Enable Firewall'
         # Disallow by default
         sudo ufw default deny incoming comment 'deny all incoming traffic'
-
-        # Allow Rocketpool ports
-        # configure_firewall
-
-        # if [[ $ENABLE_FALLBACK == true ]]; then
-        #     configure_firewall_for_fallback
-        # fi
 
         if [[ $INSTALL_TAILSCALE == true ]]; then
             sudo ufw allow in on tailscale0
